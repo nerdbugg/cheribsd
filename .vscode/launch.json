@@ -1,0 +1,32 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+
+    // configuration from https://gist.github.com/wtakuo/1f400072a50091fb354b5e4349410774
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/home/chu/cheri/build/cheribsd-riscv64-build/home/chu/cheri/cheribsd/riscv.riscv64/sys/QEMU/kernel.full",
+            "cwd": "${workspaceFolder}",
+            // Speciry the full path to riscv64-unknown-elf-gdb.
+            // Mac users should use the gdb in SiFive toolchain.
+            "miDebuggerPath": "/usr/bin/gdb-multiarch",
+            // Replace 25501 with (2500 + YOURID) where YOURID is the integer given by the command "id -u".
+            "miDebuggerServerAddress": "127.0.0.1:26002",
+            "MIMode": "gdb",
+            "stopAtEntry": true,
+            "preLaunchTask": "fix_gdbinit",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": false
+                }
+            ]
+        }
+    ]
+}
