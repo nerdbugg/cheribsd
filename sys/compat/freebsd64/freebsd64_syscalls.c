@@ -583,4 +583,5 @@ const char *freebsd64_syscallnames[] = {
 	"freebsd64___realpathat",			/* 574 = freebsd64___realpathat */
 	"close_range",			/* 575 = close_range */
 	"freebsd64_rpctls_syscall",			/* 576 = freebsd64_rpctls_syscall */
+	"tfork",			/* 577 = tfork */
 };

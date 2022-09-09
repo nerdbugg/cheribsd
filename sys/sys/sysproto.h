@@ -1846,6 +1846,9 @@ struct rpctls_syscall_args {
 	char op_l_[PADL_(int)]; int op; char op_r_[PADR_(int)];
 	char path_l_[PADL_(const char * __capability)]; const char * __capability path; char path_r_[PADR_(const char * __capability)];
 };
+struct tfork_args {
+	register_t dummy;
+};
 int	nosys(struct thread *, struct nosys_args *);
 void	sys_sys_exit(struct thread *, struct sys_exit_args *);
 int	sys_fork(struct thread *, struct fork_args *);
@@ -2239,6 +2242,7 @@ int	sys_sigfastblock(struct thread *, struct sigfastblock_args *);
 int	sys___realpathat(struct thread *, struct __realpathat_args *);
 int	sys_close_range(struct thread *, struct close_range_args *);
 int	sys_rpctls_syscall(struct thread *, struct rpctls_syscall_args *);
+int	sys_tfork(struct thread *, struct tfork_args *);
 
 #ifdef COMPAT_43
 
@@ -3172,6 +3176,7 @@ int	freebsd12_closefrom(struct thread *, struct freebsd12_closefrom_args *);
 #define	SYS_AUE___realpathat	AUE_REALPATHAT
 #define	SYS_AUE_close_range	AUE_CLOSERANGE
 #define	SYS_AUE_rpctls_syscall	AUE_NULL
+#define	SYS_AUE_tfork	AUE_NULL
 
 #undef PAD_
 #undef PADL_

@@ -53,6 +53,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/sysctl.h>
 #include <sys/ucontext.h>
 #include <sys/thr.h>
+#include <sys/syslog.h>
 #include <sys/rtprio.h>
 #include <sys/umtx.h>
 #include <sys/limits.h>
@@ -141,6 +142,14 @@ sys_thr_new(struct thread *td, struct thr_new_args *uap)
 	if ((error = copyincap(uap->param, &param, uap->param_size)))
 		return (error);
 	return (kern_thr_new(td, &param));
+}
+
+int
+sys_tfork(struct thread * td, struct tfork_args *uap)
+{
+	printf("Message from printf function\n");
+
+	return (0);
 }
 
 static int

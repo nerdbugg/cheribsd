@@ -3249,6 +3249,9 @@
 		    _In_z_ const char *path
 		);
 	}
+577 AUE_NULL    STD {
+        int tfork(void);
+}
 
 ; Please copy any additions and changes to the following compatability tables:
 ; sys/compat/freebsd32/syscalls.master
