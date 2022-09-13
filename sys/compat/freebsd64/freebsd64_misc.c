@@ -1484,6 +1484,18 @@ freebsd64_thr_create(struct thread *td, struct freebsd64_thr_create_args *uap)
 }
 
 int
+freebsd64_tfork(struct thread *td, struct freebsd64_tfork_args *uap)
+{
+	struct tfork_req treq;
+	treq.s1 = (uintptr_t)uap->s1;
+	treq.e1 = (uintptr_t)uap->e1;
+	treq.s2 = (uintptr_t)uap->s2;
+	treq.e2 = (uintptr_t)uap->e2;
+
+	return kern_tfork(td, &treq);
+}
+
+int
 freebsd64_thr_self(struct thread *td, struct freebsd64_thr_self_args *uap)
 {
 	int error;

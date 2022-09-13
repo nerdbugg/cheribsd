@@ -60,6 +60,8 @@ __FBSDID("$FreeBSD$");
 #include <sys/pmckern.h>
 #endif
 
+#include <cheri/cheric.h>
+
 #include <machine/frame.h>
 
 #include <security/audit/audit.h>
@@ -141,6 +143,38 @@ sys_thr_new(struct thread *td, struct thr_new_args *uap)
 	if ((error = copyincap(uap->param, &param, uap->param_size)))
 		return (error);
 	return (kern_thr_new(td, &param));
+}
+
+int	
+sys_tfork(struct thread *td, struct tfork_args *uap)
+{
+	struct tfork_req treq;
+
+#if !__has_feature(capabilities)
+	treq.s1 = uap->s1;
+	treq.e1 = uap->e1;
+	treq.s2 = uap->s2;
+	treq.e2 = uap->e2;
+#else
+	treq.s1 = cheri_getaddress(uap->s1);
+	treq.e1 = cheri_getaddress(uap->e1);
+	treq.s2 = cheri_getaddress(uap->s2);
+	treq.e2 = cheri_getaddress(uap->e2);
+#endif
+	return kern_tfork(td, &treq);
+}
+
+int
+kern_tfork(struct thread *td, struct tfork_req *treq)
+{
+	struct proc *p;
+
+	p = td->td_proc;
+	// find map_entry from memory range?
+
+	printf("memory range:%p - %p\n", (void*)treq->s1, (void*)treq->e1);
+	printf("memory range:%p - %p\n", (void*)treq->s2, (void*)treq->e2);
+	return 0;
 }
 
 static int

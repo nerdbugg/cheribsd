@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.8)
 project(CheriBSD LANGUAGES NONE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(TARGET "" CACHE STRING "Target machine.")
-set(TARGET_ARCH "" CACHE STRING "Target machine arch.")
+set(TARGET "riscv" CACHE STRING "Target machine.")
+set(TARGET_ARCH "riscv64" CACHE STRING "Target machine arch.")
 
 if (NOT TARGET)
     message(FATAL_ERROR "TARGET must be set!")

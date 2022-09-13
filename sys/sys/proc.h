@@ -1028,6 +1028,13 @@ struct	fork_req {
 #define	FR2_SHARE_PATHS		0x00000002 /* Invert sense of RFFDG for paths */
 };
 
+struct tfork_req {
+    uintptr_t s1;
+    uintptr_t e1;
+    uintptr_t s2;
+    uintptr_t e2;
+};
+
 /*
  * pget() flags.
  */
@@ -1145,6 +1152,7 @@ void	thread_cow_free(struct thread *td);
 void	thread_cow_update(struct thread *td);
 int	thread_create(struct thread *td, struct rtprio *rtp,
 	    int (*initialize_thread)(struct thread *, void *), void *thunk);
+int kern_tfork(struct thread *td, struct tfork_req *treq);
 void	thread_exit(void) __dead2;
 void	thread_free(struct thread *td);
 void	thread_link(struct thread *td, struct proc *p);

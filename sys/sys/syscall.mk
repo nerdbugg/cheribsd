@@ -419,4 +419,5 @@ MIASM =  \
 	sigfastblock.o \
 	__realpathat.o \
 	close_range.o \
-	rpctls_syscall.o
+	rpctls_syscall.o \
+	tfork.o

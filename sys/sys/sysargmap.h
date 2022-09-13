@@ -402,6 +402,7 @@ static int sysargmask[] = {
 	[SYS___realpathat] = (0x0 | 0x2 | 0x4),
 	[SYS_close_range] = (0x0),
 	[SYS_rpctls_syscall] = (0x0 | 0x2),
+	[SYS_tfork] = (0x0 | 0x1 | 0x2 | 0x4 | 0x8),
 };
 
 #endif /* !_SYSARGMAP_H_ */

@@ -3394,6 +3394,16 @@ systrace_args(int sysnum, void *params, uint64_t *uarg, int *n_args)
 		*n_args = 2;
 		break;
 	}
+	/* freebsd64_tfork */
+	case 577: {
+		struct freebsd64_tfork_args *p = params;
+		uarg[0] = (intptr_t) p->s1; /* void * */
+		uarg[1] = (intptr_t) p->e1; /* void * */
+		uarg[2] = (intptr_t) p->s2; /* void * */
+		uarg[3] = (intptr_t) p->e2; /* void * */
+		*n_args = 4;
+		break;
+	}
 	default:
 		*n_args = 0;
 		break;
@@ -9079,6 +9089,25 @@ systrace_entry_setargdesc(int sysnum, int ndx, char *desc, size_t descsz)
 			break;
 		};
 		break;
+	/* freebsd64_tfork */
+	case 577:
+		switch(ndx) {
+		case 0:
+			p = "userland void *";
+			break;
+		case 1:
+			p = "userland void *";
+			break;
+		case 2:
+			p = "userland void *";
+			break;
+		case 3:
+			p = "userland void *";
+			break;
+		default:
+			break;
+		};
+		break;
 	default:
 		break;
 	};
@@ -11017,6 +11046,11 @@ systrace_return_setargdesc(int sysnum, int ndx, char *desc, size_t descsz)
 		break;
 	/* freebsd64_rpctls_syscall */
 	case 576:
+		if (ndx == 0 || ndx == 1)
+			p = "int";
+		break;
+	/* freebsd64_tfork */
+	case 577:
 		if (ndx == 0 || ndx == 1)
 			p = "int";
 		break;
