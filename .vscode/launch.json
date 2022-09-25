@@ -19,7 +19,6 @@
             "miDebuggerServerAddress": "127.0.0.1:26002",
             "MIMode": "gdb",
             "stopAtEntry": true,
-            "preLaunchTask": "fix_gdbinit",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
