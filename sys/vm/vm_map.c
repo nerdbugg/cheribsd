@@ -4919,6 +4919,185 @@ vmspace_fork(struct vmspace *vm1, vm_ooffset_t *fork_charge)
 }
 
 /*
+ * This function contains some source code from vm_map_delete, vmspace_fork
+ */
+int
+vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t e1,
+    vm_offset_t s2, vm_offset_t e2)
+{
+	vm_map_entry_t old_entry, new_entry, entry, next_entry, scratch_entry;
+	vm_inherit_t inh;
+	vm_object_t object;
+	vm_ooffset_t mem_charged;
+
+	/* Address range must be all in user VM space. */
+	if (!vm_map_range_valid(map, s2, e2))
+		return (EINVAL);
+	if (map->busy)
+		vm_map_wait_busy(map);
+
+	vm_map_lock(map);
+
+	int rv;
+	rv = vm_map_lookup_clip_start(map, s1, &entry, &scratch_entry);
+	if (rv != KERN_SUCCESS)
+		return rv;
+	for(; entry->start < e1; entry = next_entry) {
+		if ((entry->eflags & MAP_ENTRY_IN_TRANSITION) != 0 ||
+		    (vm_map_pmap(map) != kernel_pmap &&
+			vm_map_entry_system_wired_count(entry) != 0)) {
+			unsigned int last_timestamp;
+			vm_offset_t saved_start;
+
+			saved_start = entry->start;
+			entry->eflags |= MAP_ENTRY_NEEDS_WAKEUP;
+			last_timestamp = map->timestamp;
+			(void) vm_map_unlock_and_wait(map, 0);
+			vm_map_lock(map);
+			if (last_timestamp + 1 != map->timestamp) {
+				rv = vm_map_lookup_clip_start(map, saved_start,
+				    &next_entry, &scratch_entry);
+				if (rv != KERN_SUCCESS)
+					break;
+			} else
+				next_entry = entry;
+			continue;
+		}
+
+		rv = vm_map_clip_end(map, entry, e1);
+		if (rv != KERN_SUCCESS)
+			break;
+		next_entry = vm_map_entry_succ(entry);
+
+		/* cow logic */
+		/* TODO: view wired memory processing in fork */
+		if (entry->wired_count != 0)
+			vm_map_entry_unwire(map, entry);
+
+		/* insert cowed new entry into map */
+		old_entry = entry;
+		inh = old_entry->inheritance;
+		if((old_entry->eflags & (MAP_ENTRY_GUARD & MAP_ENTRY_UNMAPPED))!=0 &&
+		   inh != VM_INHERIT_NONE)
+			inh = VM_INHERIT_COPY;
+
+		switch (inh) {
+		case VM_INHERIT_NONE:
+			break;
+		case VM_INHERIT_SHARE:
+			/* same logic code with handle in vmspace_fork */
+			object = old_entry->object.vm_object;
+			if (object == NULL) {
+				vm_map_entry_back(old_entry);
+				object = old_entry->object.vm_object;
+			}
+
+			vm_object_reference(object);
+			if (old_entry->eflags & MAP_ENTRY_NEEDS_COPY) {
+				vm_object_shadow(&old_entry->object.vm_object,
+						 &old_entry->offset,
+						 old_entry->end-old_entry->start,
+						 old_entry->cred,
+						 true);
+				old_entry->eflags &= ~MAP_ENTRY_NEEDS_COPY;
+				old_entry->cred = NULL;
+
+				vm_object_deallocate(object);
+				object = old_entry->object.vm_object;
+			} else {
+				VM_OBJECT_WLOCK(object);
+				vm_object_clear_flag(object, OBJ_ONEMAPPING);
+				if (old_entry->cred != NULL) {
+					KASSERT(object->cred == NULL,
+						("vm_region_cow both cred"));
+					object->cred = old_entry->cred;
+					object->charge = old_entry->end - old_entry->start;
+					old_entry->cred = NULL;
+				}
+				if (old_entry->eflags & MAP_ENTRY_WRITECNT &&
+				    object->type == OBJT_VNODE) {
+					KASSERT(((struct vnode *)object->
+					    handle)->v_writecount >0,
+						("vm_region_cow: v_writecount %p", object));
+					KASSERT(object->un_pager.vnp.writemappings > 0,
+						("vm_region_cow: vnp.writecount %p", object));
+				}
+				VM_OBJECT_WUNLOCK(object);
+			}
+			new_entry = vm_map_entry_create(map);
+			*new_entry = *old_entry;
+			/* change new entry point to new address range */
+			new_entry->start = old_entry->start - s1 + s2;
+			new_entry->end = old_entry->end - s1 + s2;
+			new_entry->eflags &= ~(MAP_ENTRY_USER_WIRED | MAP_ENTRY_IN_TRANSITION);
+			new_entry->wiring_thread = NULL;
+			new_entry->wired_count = 0;
+			if (new_entry->eflags & MAP_ENTRY_WRITECNT) {
+				vm_pager_update_writecount(object,
+							   new_entry->start, new_entry->end);
+			}
+			vm_map_entry_set_vnode_text(new_entry, true);
+
+			/* insert entry into the new map */
+			vm_map_entry_link(map, new_entry);
+
+			/* not to update vm_space->vm_daddr */
+			/* update physical map */
+			/* need do nothing? */
+			break;
+		case VM_INHERIT_COPY:
+			new_entry = vm_map_entry_create(map);
+			*new_entry = *old_entry;
+			/* change new entry point to new address range */
+			new_entry->start = old_entry->start - s1 + s2;
+			new_entry->end = old_entry->end - s1 + s2;
+			/* set new entry to CoW over the old object */
+			new_entry->eflags &= ~(MAP_ENTRY_USER_WIRED |
+					       MAP_ENTRY_IN_TRANSITION | MAP_ENTRY_WRITECNT);
+			new_entry->wiring_thread = NULL;
+			new_entry->wired_count = 0;
+			new_entry->object.vm_object = NULL;
+			new_entry->cred = NULL;
+			vm_map_entry_link(map, new_entry);
+			/* not to update vm_space->vm_daddr */
+			/* TODO: vm_map_copy_entry? */
+			mem_charged = 0;
+			vm_map_copy_entry(map, map, old_entry, new_entry, &mem_charged);
+			vm_map_entry_set_vnode_text(new_entry, true);
+			break;
+
+		case VM_INHERIT_ZERO:
+			new_entry = vm_map_entry_create(map);
+			memset(new_entry, 0, sizeof(*new_entry));
+
+			new_entry->start = old_entry->start - s1 + s2;
+			new_entry->end = old_entry->end - s1 +s2;
+			new_entry->eflags = old_entry->eflags &
+				~(MAP_ENTRY_USER_WIRED | MAP_ENTRY_IN_TRANSITION |
+				MAP_ENTRY_WRITECNT | MAP_ENTRY_VN_EXEC |
+				MAP_ENTRY_SPLIT_BOUNDARY_MASK);
+			new_entry->protection = old_entry->protection;
+			new_entry->max_protection = old_entry->max_protection;
+			new_entry->inheritance = VM_INHERIT_ZERO;
+
+			vm_map_entry_link(map, new_entry);
+			/* TODO: skip vmspace_map_entry_forked */
+
+			new_entry->cred = curthread->td_ucred;
+			crhold(new_entry->cred);
+			/* TODO: fork_charge processing */
+			break;
+		}
+	}
+
+	/* unlock */
+	sx_xunlock(&map->lock);
+	vm_map_process_deferred();
+
+	return (rv);
+}
+
+/*
  * Create a process's stack for exec_new_vmspace().  This function is never
  * asked to wire the newly created stack.
  */

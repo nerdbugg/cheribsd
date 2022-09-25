@@ -60,6 +60,9 @@ __FBSDID("$FreeBSD$");
 #include <sys/pmckern.h>
 #endif
 
+#include <vm/vm_map.h>
+#include <vm/vm_extern.h>
+
 #include <cheri/cheric.h>
 
 #include <machine/frame.h>
@@ -168,10 +171,23 @@ int
 kern_tfork(struct thread *td, struct tfork_req *treq)
 {
 	struct proc *p;
+	struct pcb *pcb;
+	struct vm_map *map;
 
 	p = td->td_proc;
+	pcb = td->td_pcb;
+	map = &td->td_proc->p_vmspace->vm_map;
 	// find map_entry from memory range?
 
+	// for loop to iterate memory region
+	vm_offset_t s1 = (vm_offset_t)treq->s1;
+	vm_offset_t e1 = (vm_offset_t)treq->e1;
+	vm_offset_t s2 = (vm_offset_t)treq->s2;
+	vm_offset_t e2 = (vm_offset_t)treq->e2;
+
+	vm_region_cow(map, s1, e1, s2, e2);
+
+	/* TODO: refactor parameter name */
 	printf("memory range:%p - %p\n", (void*)treq->s1, (void*)treq->e1);
 	printf("memory range:%p - %p\n", (void*)treq->s2, (void*)treq->e2);
 	return 0;
