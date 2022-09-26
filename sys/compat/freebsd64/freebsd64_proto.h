@@ -1501,9 +1501,8 @@ struct freebsd64_rpctls_syscall_args {
 };
 struct freebsd64_tfork_args {
 	char s1_l_[PADL_(void *)]; void * s1; char s1_r_[PADR_(void *)];
-	char e1_l_[PADL_(void *)]; void * e1; char e1_r_[PADR_(void *)];
 	char s2_l_[PADL_(void *)]; void * s2; char s2_r_[PADR_(void *)];
-	char e2_l_[PADL_(void *)]; void * e2; char e2_r_[PADR_(void *)];
+	char len_l_[PADL_(size_t)]; size_t len; char len_r_[PADR_(size_t)];
 };
 int	freebsd64_read(struct thread *, struct freebsd64_read_args *);
 int	freebsd64_write(struct thread *, struct freebsd64_write_args *);

@@ -60,6 +60,8 @@ __FBSDID("$FreeBSD$");
 #include <sys/pmckern.h>
 #endif
 
+#include <vm/vm.h>
+#include <vm/pmap.h>
 #include <vm/vm_map.h>
 #include <vm/vm_extern.h>
 
@@ -155,14 +157,12 @@ sys_tfork(struct thread *td, struct tfork_args *uap)
 
 #if !__has_feature(capabilities)
 	treq.s1 = uap->s1;
-	treq.e1 = uap->e1;
 	treq.s2 = uap->s2;
-	treq.e2 = uap->e2;
+	treq.len = uap->len;
 #else
 	treq.s1 = cheri_getaddress(uap->s1);
-	treq.e1 = cheri_getaddress(uap->e1);
 	treq.s2 = cheri_getaddress(uap->s2);
-	treq.e2 = cheri_getaddress(uap->e2);
+	treq.len = uap->len;
 #endif
 	return kern_tfork(td, &treq);
 }
@@ -173,23 +173,20 @@ kern_tfork(struct thread *td, struct tfork_req *treq)
 	struct proc *p;
 	struct pcb *pcb;
 	struct vm_map *map;
+	vm_offset_t s1, s2;
 
 	p = td->td_proc;
 	pcb = td->td_pcb;
 	map = &td->td_proc->p_vmspace->vm_map;
-	// find map_entry from memory range?
 
-	// for loop to iterate memory region
-	vm_offset_t s1 = (vm_offset_t)treq->s1;
-	vm_offset_t e1 = (vm_offset_t)treq->e1;
-	vm_offset_t s2 = (vm_offset_t)treq->s2;
-	vm_offset_t e2 = (vm_offset_t)treq->e2;
+	s1 = (vm_offset_t)treq->s1;
+	s2 = (vm_offset_t)treq->s2;
+	size_t len = treq->len;
 
-	vm_region_cow(map, s1, e1, s2, e2);
+	// vm_region_cow(map, s1, s2, len);
 
-	/* TODO: refactor parameter name */
-	printf("memory range:%p - %p\n", (void*)treq->s1, (void*)treq->e1);
-	printf("memory range:%p - %p\n", (void*)treq->s2, (void*)treq->e2);
+	printf("memory range:%p with %lu bytes\n", (void*)treq->s1, len);
+	printf("memory range:%p with %lu bytes\n", (void*)treq->s2, len);
 	return 0;
 }
 

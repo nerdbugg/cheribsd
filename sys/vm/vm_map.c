@@ -4922,13 +4922,16 @@ vmspace_fork(struct vmspace *vm1, vm_ooffset_t *fork_charge)
  * This function contains some source code from vm_map_delete, vmspace_fork
  */
 int
-vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t e1,
-    vm_offset_t s2, vm_offset_t e2)
+vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len)
 {
 	vm_map_entry_t old_entry, new_entry, entry, next_entry, scratch_entry;
 	vm_inherit_t inh;
 	vm_object_t object;
 	vm_ooffset_t mem_charged;
+
+	vm_offset_t e1 = s1 + len;
+	vm_offset_t e2 = s2 + len;
+	/* TODO: reference sys_munmap, round parameters */
 
 	/* Address range must be all in user VM space. */
 	if (!vm_map_range_valid(map, s2, e2))

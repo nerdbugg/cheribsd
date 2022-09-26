@@ -3398,10 +3398,9 @@ systrace_args(int sysnum, void *params, uint64_t *uarg, int *n_args)
 	case 577: {
 		struct freebsd64_tfork_args *p = params;
 		uarg[0] = (intptr_t) p->s1; /* void * */
-		uarg[1] = (intptr_t) p->e1; /* void * */
-		uarg[2] = (intptr_t) p->s2; /* void * */
-		uarg[3] = (intptr_t) p->e2; /* void * */
-		*n_args = 4;
+		uarg[1] = (intptr_t) p->s2; /* void * */
+		uarg[2] = p->len; /* size_t */
+		*n_args = 3;
 		break;
 	}
 	default:
@@ -9099,10 +9098,7 @@ systrace_entry_setargdesc(int sysnum, int ndx, char *desc, size_t descsz)
 			p = "userland void *";
 			break;
 		case 2:
-			p = "userland void *";
-			break;
-		case 3:
-			p = "userland void *";
+			p = "size_t";
 			break;
 		default:
 			break;

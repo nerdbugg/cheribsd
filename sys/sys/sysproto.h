@@ -1848,9 +1848,8 @@ struct rpctls_syscall_args {
 };
 struct tfork_args {
 	char s1_l_[PADL_(void * __capability)]; void * __capability s1; char s1_r_[PADR_(void * __capability)];
-	char e1_l_[PADL_(void * __capability)]; void * __capability e1; char e1_r_[PADR_(void * __capability)];
 	char s2_l_[PADL_(void * __capability)]; void * __capability s2; char s2_r_[PADR_(void * __capability)];
-	char e2_l_[PADL_(void * __capability)]; void * __capability e2; char e2_r_[PADR_(void * __capability)];
+	char len_l_[PADL_(size_t)]; size_t len; char len_r_[PADR_(size_t)];
 };
 int	nosys(struct thread *, struct nosys_args *);
 void	sys_sys_exit(struct thread *, struct sys_exit_args *);

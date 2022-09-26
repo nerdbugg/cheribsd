@@ -1029,10 +1029,9 @@ struct	fork_req {
 };
 
 struct tfork_req {
-    uintptr_t s1;
-    uintptr_t e1;
-    uintptr_t s2;
-    uintptr_t e2;
+    uintptr_t 	s1;
+    uintptr_t 	s2;
+    size_t 		len;
 };
 
 /*

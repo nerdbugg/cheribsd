@@ -3252,9 +3252,8 @@
 577 AUE_NULL	STD {
 		int tfork(
 		    _In_ void *s1,
-		    _In_ void *e1,
 		    _In_ void *s2,
-		    _In_ void *e2
+		    _In_ size_t len
 		);
 	}
 
