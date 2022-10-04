@@ -4936,10 +4936,11 @@ vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len)
 	/* Address range must be all in user VM space. */
 	if (!vm_map_range_valid(map, s2, e2))
 		return (EINVAL);
-	if (map->busy)
-		vm_map_wait_busy(map);
 
-	vm_map_lock(map);
+    vm_map_lock(map);
+    if (map->busy) {
+        vm_map_wait_busy(map);
+    }
 
 	int rv;
 	rv = vm_map_lookup_clip_start(map, s1, &entry, &scratch_entry);

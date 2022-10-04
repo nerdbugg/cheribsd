@@ -183,7 +183,7 @@ kern_tfork(struct thread *td, struct tfork_req *treq)
 	s2 = (vm_offset_t)treq->s2;
 	size_t len = treq->len;
 
-	// vm_region_cow(map, s1, s2, len);
+	vm_region_cow(map, s1, s2, len);
 
 	printf("memory range:%p with %lu bytes\n", (void*)treq->s1, len);
 	printf("memory range:%p with %lu bytes\n", (void*)treq->s2, len);
