@@ -156,8 +156,8 @@ sys_tfork(struct thread *td, struct tfork_args *uap)
 	struct tfork_req treq;
 
 #if !__has_feature(capabilities)
-	treq.s1 = uap->s1;
-	treq.s2 = uap->s2;
+	treq.s1 = (uintptr_t)uap->s1;
+	treq.s2 = (uintptr_t)uap->s2;
 	treq.len = uap->len;
 #else
 	treq.s1 = cheri_getaddress(uap->s1);
