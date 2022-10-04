@@ -156,8 +156,8 @@ sys_tfork(struct thread *td, struct tfork_args *uap)
 	struct tfork_req treq;
 
 #if !__has_feature(capabilities)
-	treq.s1 = uap->s1;
-	treq.s2 = uap->s2;
+	treq.s1 = (uintptr_t)uap->s1;
+	treq.s2 = (uintptr_t)uap->s2;
 	treq.len = uap->len;
 #else
 	treq.s1 = cheri_getaddress(uap->s1);
@@ -170,11 +170,13 @@ sys_tfork(struct thread *td, struct tfork_args *uap)
 int
 kern_tfork(struct thread *td, struct tfork_req *treq)
 {
+    int error;
 	struct proc *p;
 	struct pcb *pcb;
 	struct vm_map *map;
-	vm_offset_t s1, s2;
+	vm_offset_t s1, s2, mem_charged;
 
+    error = 0;
 	p = td->td_proc;
 	pcb = td->td_pcb;
 	map = &td->td_proc->p_vmspace->vm_map;
@@ -183,11 +185,23 @@ kern_tfork(struct thread *td, struct tfork_req *treq)
 	s2 = (vm_offset_t)treq->s2;
 	size_t len = treq->len;
 
-	vm_region_cow(map, s1, s2, len);
+	error = vm_region_cow(map, s1, s2, len, &mem_charged);
+    /* TODO: error handling */
+    if (!swap_reserve(mem_charged)) {
+        /*
+         * The swap reservation failed. The accounting
+         * from the entries of the copied vm2 will be
+         * subtracted in vmspace_free(), so force the
+         * reservation there.
+         */
+        swap_reserve_force(mem_charged);
+        error = ENOMEM;
+        /* TODO: error handling */
+    }
 
 	printf("memory range:%p with %lu bytes\n", (void*)treq->s1, len);
 	printf("memory range:%p with %lu bytes\n", (void*)treq->s2, len);
-	return 0;
+	return (error);
 }
 
 static int

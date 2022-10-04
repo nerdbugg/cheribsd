@@ -4922,12 +4922,11 @@ vmspace_fork(struct vmspace *vm1, vm_ooffset_t *fork_charge)
  * This function contains some source code from vm_map_delete, vmspace_fork
  */
 int
-vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len)
+vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len, vm_ooffset_t *mem_charged)
 {
 	vm_map_entry_t old_entry, new_entry, entry, next_entry, scratch_entry;
 	vm_inherit_t inh;
 	vm_object_t object;
-	vm_ooffset_t mem_charged;
 
 	vm_offset_t e1 = s1 + len;
 	vm_offset_t e2 = s2 + len;
@@ -5065,8 +5064,8 @@ vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len)
 			vm_map_entry_link(map, new_entry);
 			/* not to update vm_space->vm_daddr */
 			/* TODO: vm_map_copy_entry? */
-			mem_charged = 0;
-			vm_map_copy_entry(map, map, old_entry, new_entry, &mem_charged);
+			*mem_charged = 0;
+			vm_map_copy_entry(map, map, old_entry, new_entry, mem_charged);
 			vm_map_entry_set_vnode_text(new_entry, true);
 			break;
 
@@ -5090,6 +5089,7 @@ vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len)
 			new_entry->cred = curthread->td_ucred;
 			crhold(new_entry->cred);
 			/* TODO: fork_charge processing */
+            *mem_charged += (new_entry->end - new_entry->start);
 			break;
 		}
 	}
