@@ -10,11 +10,11 @@
             "name": "Debug",
             "type": "cppdbg",
             "request": "launch",
-            "program": "/home/chu/cheri/build/cheribsd-riscv64-build/home/chu/cheri/cheribsd/riscv.riscv64/sys/QEMU/kernel.full",
+            "program": "/home/chu/cheri/build/cheribsd-riscv64-hybrid-build/home/chu/cheri/cheribsd/riscv.riscv64/sys/CHERI-QEMU/kernel.full",
             "cwd": "${workspaceFolder}",
             // Speciry the full path to riscv64-unknown-elf-gdb.
             // Mac users should use the gdb in SiFive toolchain.
-            "miDebuggerPath": "/usr/bin/gdb-multiarch",
+            "miDebuggerPath": "/home/chu/cheri/output/sdk/bin/gdb",
             // Replace 25501 with (2500 + YOURID) where YOURID is the integer given by the command "id -u".
             "miDebuggerServerAddress": "127.0.0.1:26002",
             "MIMode": "gdb",
