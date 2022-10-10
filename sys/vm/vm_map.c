@@ -4687,6 +4687,22 @@ vmspace_map_entry_forked(const struct vmspace *vm1, struct vmspace *vm2,
 	}
 }
 
+static void
+vmspace_map_entry_copied(struct vmspace *vm, vm_map_entry_t entry)
+{
+    vm_size_t entrysize;
+
+    if ((entry->eflags & (MAP_ENTRY_GUARD | MAP_ENTRY_UNMAPPED)) != 0)
+        return;
+    entrysize = entry->end - entry->start;
+    vm->vm_map.size += entrysize;
+
+    if (entry->eflags & (MAP_ENTRY_GROWS_DOWN | MAP_ENTRY_GROWS_UP)) {
+        vm->vm_ssize += btoc(entrysize);
+    }
+    /* TODO: skip dsize, tsize processing */
+}
+
 /*
  * vmspace_fork:
  * Create a new process vmspace structure and vm_map
@@ -4922,12 +4938,14 @@ vmspace_fork(struct vmspace *vm1, vm_ooffset_t *fork_charge)
  * This function contains some source code from vm_map_delete, vmspace_fork
  */
 int
-vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len, vm_ooffset_t *mem_charged)
+vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm_ooffset_t *mem_charged)
 {
+    vm_map_t map;
 	vm_map_entry_t old_entry, new_entry, entry, next_entry, scratch_entry;
 	vm_inherit_t inh;
 	vm_object_t object;
 
+    map = &(vm->vm_map);
 	vm_offset_t e1 = s1 + len;
 	vm_offset_t e2 = s2 + len;
 	/* TODO: reference sys_munmap, round parameters */
@@ -5045,6 +5063,7 @@ vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len, vm_ooffs
 			vm_map_entry_link(map, new_entry);
 
 			/* not to update vm_space->vm_daddr */
+                vmspace_map_entry_copied(vm, entry);
 			/* update physical map */
 			/* need do nothing? */
 			break;

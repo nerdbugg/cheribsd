@@ -174,18 +174,20 @@ kern_tfork(struct thread *td, struct tfork_req *treq)
 	struct proc *p;
 	struct pcb *pcb;
 	struct vm_map *map;
+    struct vmspace *vm;
 	vm_offset_t s1, s2, mem_charged;
 
     error = 0;
 	p = td->td_proc;
 	pcb = td->td_pcb;
+    vm  = &td->td_proc->p_vmspace;
 	map = &td->td_proc->p_vmspace->vm_map;
 
 	s1 = (vm_offset_t)treq->s1;
 	s2 = (vm_offset_t)treq->s2;
 	size_t len = treq->len;
 
-	error = vm_region_cow(map, s1, s2, len, &mem_charged);
+	error = vm_region_cow(vm, s1, s2, len, &mem_charged);
     /* TODO: error handling */
     if (!swap_reserve(mem_charged)) {
         /*

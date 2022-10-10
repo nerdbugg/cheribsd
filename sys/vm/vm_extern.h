@@ -116,7 +116,7 @@ void vm_sync_icache(vm_map_t, vm_offset_t, vm_size_t);
 typedef int (*pmap_pinit_t)(struct pmap *pmap);
 struct vmspace *vmspace_alloc(vm_pointer_t, vm_pointer_t, pmap_pinit_t);
 struct vmspace *vmspace_fork(struct vmspace *, vm_ooffset_t *);
-int vm_region_cow(vm_map_t map, vm_offset_t s1, vm_offset_t s2, size_t len, vm_ooffset_t *mem_charged);
+int vm_region_cow(struct vmspace *, vm_offset_t, vm_offset_t, size_t, vm_ooffset_t *);
 int vmspace_exec(struct proc *, vm_offset_t, vm_offset_t);
 int vmspace_unshare(struct proc *);
 void vmspace_exit(struct thread *);
