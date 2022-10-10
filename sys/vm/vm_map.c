@@ -4700,7 +4700,7 @@ vmspace_map_entry_copied(struct vmspace *vm, vm_map_entry_t entry)
     if (entry->eflags & (MAP_ENTRY_GROWS_DOWN | MAP_ENTRY_GROWS_UP)) {
         vm->vm_ssize += btoc(entrysize);
     }
-    /* TODO: skip dsize, tsize processing */
+    /* TODO: skip ssize, dsize, tsize processing */
 }
 
 /*
@@ -5062,8 +5062,8 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			/* insert entry into the new map */
 			vm_map_entry_link(map, new_entry);
 
-			/* not to update vm_space->vm_daddr */
-                vmspace_map_entry_copied(vm, entry);
+            /* TODO: test vmspace_map_entry_copied (vmspace size, dsize, ...) */
+            vmspace_map_entry_copied(vm, entry);
 			/* update physical map */
 			/* need do nothing? */
 			break;
@@ -5081,9 +5081,10 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			new_entry->object.vm_object = NULL;
 			new_entry->cred = NULL;
 			vm_map_entry_link(map, new_entry);
-			/* not to update vm_space->vm_daddr */
-			/* TODO: vm_map_copy_entry? */
+			/* TODO: test vmspace_map_entry_copied (vmspace size, dsize, ...) */
+            vmspace_map_entry_copied(vm, entry);
 			*mem_charged = 0;
+            /* TODO: vm_map_copy_entry? */
 			vm_map_copy_entry(map, map, old_entry, new_entry, mem_charged);
 			vm_map_entry_set_vnode_text(new_entry, true);
 			break;
@@ -5103,11 +5104,11 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			new_entry->inheritance = VM_INHERIT_ZERO;
 
 			vm_map_entry_link(map, new_entry);
-			/* TODO: skip vmspace_map_entry_forked */
+            /* TODO: test vmspace_map_entry_copied (vmspace size, dsize, ...) */
+            vmspace_map_entry_copied(vm, entry);
 
 			new_entry->cred = curthread->td_ucred;
 			crhold(new_entry->cred);
-			/* TODO: fork_charge processing */
             *mem_charged += (new_entry->end - new_entry->start);
 			break;
 		}
