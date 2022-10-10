@@ -180,7 +180,7 @@ kern_tfork(struct thread *td, struct tfork_req *treq)
     error = 0;
 	p = td->td_proc;
 	pcb = td->td_pcb;
-    vm  = &td->td_proc->p_vmspace;
+    vm  = td->td_proc->p_vmspace;
 	map = &td->td_proc->p_vmspace->vm_map;
 
 	s1 = (vm_offset_t)treq->s1;
