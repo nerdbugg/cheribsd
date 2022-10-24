@@ -205,7 +205,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		 *         charged, charged uid.
 		 */
 		error = sbuf_printf(sb,
-		    "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x %s %s %s %s %s %d\n",
+		    "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x 0x%x %s %s %s %s %s %d\n",
 			(u_long)e_start, (u_long)e_end,
 			resident, privateresident,
 #ifdef COMPAT_FREEBSD32
