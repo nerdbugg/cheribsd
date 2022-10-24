@@ -205,7 +205,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		 *         charged, charged uid.
 		 */
 		error = sbuf_printf(sb,
-		    "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x %s %s %s %s %s %d\n",
+		    "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x 0x%x %s %s %s %s %s %d\n",
 			(u_long)e_start, (u_long)e_end,
 			resident, privateresident,
 #ifdef COMPAT_FREEBSD32
@@ -216,7 +216,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 			(e_prot & VM_PROT_READ)?"r":"-",
 			(e_prot & VM_PROT_WRITE)?"w":"-",
 			(e_prot & VM_PROT_EXECUTE)?"x":"-",
-			ref_count, shadow_count, flags,
+			ref_count, shadow_count, flags, e_eflags,
 			(e_eflags & MAP_ENTRY_COW)?"COW":"NCOW",
 			(e_eflags & MAP_ENTRY_NEEDS_COPY)?"NC":"NNC",
 			type, fullpath,
