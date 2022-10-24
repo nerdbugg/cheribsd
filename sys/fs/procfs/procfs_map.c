@@ -216,7 +216,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 			(e_prot & VM_PROT_READ)?"r":"-",
 			(e_prot & VM_PROT_WRITE)?"w":"-",
 			(e_prot & VM_PROT_EXECUTE)?"x":"-",
-			ref_count, shadow_count, flags,
+			ref_count, shadow_count, flags, e_eflags,
 			(e_eflags & MAP_ENTRY_COW)?"COW":"NCOW",
 			(e_eflags & MAP_ENTRY_NEEDS_COPY)?"NC":"NNC",
 			type, fullpath,
