@@ -184,10 +184,10 @@ procfs_doprocmap(PFS_FILL_ARGS)
 			if (lobj != obj)
 				VM_OBJECT_RUNLOCK(lobj);
 
+            ocred = obj->cred;
 			flags = obj->flags;
 			ref_count = obj->ref_count;
 			shadow_count = obj->shadow_count;
-            ocred = obj->cred;
 			VM_OBJECT_RUNLOCK(obj);
 			if (vp != NULL) {
 				vn_fullpath(vp, &fullpath, &freepath);
@@ -196,6 +196,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		} else {
 			type = "none";
 			flags = 0;
+            ocred = NULL;
 			ref_count = 0;
 			shadow_count = 0;
 		}
