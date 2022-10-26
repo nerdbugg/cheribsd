@@ -83,7 +83,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 	vm_map_entry_t entry, tmp_entry;
 	struct vnode *vp;
 	char *fullpath, *freepath, *type;
-	struct ucred *cred;
+	struct ucred *cred, *ocred;
 	vm_object_t obj, tobj, lobj;
 	int error, privateresident, ref_count, resident, shadow_count, flags;
 	vm_offset_t e_start, e_end;
@@ -184,6 +184,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 			if (lobj != obj)
 				VM_OBJECT_RUNLOCK(lobj);
 
+            ocred = obj->cred;
 			flags = obj->flags;
 			ref_count = obj->ref_count;
 			shadow_count = obj->shadow_count;
@@ -195,6 +196,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		} else {
 			type = "none";
 			flags = 0;
+            ocred = NULL;
 			ref_count = 0;
 			shadow_count = 0;
 		}
@@ -205,7 +207,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		 *         charged, charged uid.
 		 */
 		error = sbuf_printf(sb,
-		    "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x 0x%x %s %s %s %s %s %d\n",
+		    "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x 0x%x %s %s %s %s %s %d %s %d\n",
 			(u_long)e_start, (u_long)e_end,
 			resident, privateresident,
 #ifdef COMPAT_FREEBSD32
@@ -220,7 +222,9 @@ procfs_doprocmap(PFS_FILL_ARGS)
 			(e_eflags & MAP_ENTRY_COW)?"COW":"NCOW",
 			(e_eflags & MAP_ENTRY_NEEDS_COPY)?"NC":"NNC",
 			type, fullpath,
-			cred ? "CH":"NCH", cred ? cred->cr_ruid : -1);
+			cred ? "CH":"NCH", cred ? cred->cr_ruid : -1,
+            ocred ? "OCH":"NOCH", ocred ? ocred->cr_uid : -1
+            );
 
 		if (freepath != NULL)
 			free(freepath, M_TEMP);
