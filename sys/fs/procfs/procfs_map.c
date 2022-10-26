@@ -88,6 +88,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 	int error, privateresident, ref_count, resident, shadow_count, flags;
 	vm_offset_t e_start, e_end;
 	vm_eflags_t e_eflags;
+    vm_inherit_t inherit;
 	vm_prot_t e_prot;
 	unsigned int last_timestamp;
 	bool super;
@@ -128,6 +129,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		e_end = entry->end;
 		privateresident = 0;
 		resident = 0;
+        inherit = entry->inheritance;
 		obj = entry->object.vm_object;
 		if (obj != NULL) {
 			VM_OBJECT_RLOCK(obj);
@@ -207,7 +209,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		 *         charged, charged uid.
 		 */
 		error = sbuf_printf(sb,
-		    "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x 0x%x %s %s %s %s %s %d %s %d\n",
+		    "0x%lx 0x%lx %d %d %p %s%s%s %d %d 0x%x 0x%x 0x%x %s %s %s %s %s %d %s %d\n",
 			(u_long)e_start, (u_long)e_end,
 			resident, privateresident,
 #ifdef COMPAT_FREEBSD32
@@ -218,7 +220,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 			(e_prot & VM_PROT_READ)?"r":"-",
 			(e_prot & VM_PROT_WRITE)?"w":"-",
 			(e_prot & VM_PROT_EXECUTE)?"x":"-",
-			ref_count, shadow_count, flags, e_eflags,
+			ref_count, shadow_count, flags, e_eflags, inherit,
 			(e_eflags & MAP_ENTRY_COW)?"COW":"NCOW",
 			(e_eflags & MAP_ENTRY_NEEDS_COPY)?"NC":"NNC",
 			type, fullpath,
