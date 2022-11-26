@@ -4697,9 +4697,6 @@ vmspace_map_entry_copied(struct vmspace *vm, vm_map_entry_t entry)
     entrysize = entry->end - entry->start;
     vm->vm_map.size += entrysize;
 
-    if (entry->eflags & (MAP_ENTRY_GROWS_DOWN | MAP_ENTRY_GROWS_UP)) {
-        vm->vm_ssize += btoc(entrysize);
-    }
     /* TODO: skip ssize, dsize, tsize processing */
 }
 
@@ -4948,6 +4945,7 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
     map = &(vm->vm_map);
 	vm_offset_t e1 = s1 + len;
 	vm_offset_t e2 = s2 + len;
+    *mem_charged = 0;
 	/* TODO: reference sys_munmap, round parameters */
 
 	/* Address range must be all in user VM space. */
@@ -4964,36 +4962,10 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 	if (rv != KERN_SUCCESS)
 		return rv;
 	for(; entry->start < e1; entry = next_entry) {
-		if ((entry->eflags & MAP_ENTRY_IN_TRANSITION) != 0 ||
-		    (vm_map_pmap(map) != kernel_pmap &&
-			vm_map_entry_system_wired_count(entry) != 0)) {
-			unsigned int last_timestamp;
-			vm_offset_t saved_start;
-
-			saved_start = entry->start;
-			entry->eflags |= MAP_ENTRY_NEEDS_WAKEUP;
-			last_timestamp = map->timestamp;
-			(void) vm_map_unlock_and_wait(map, 0);
-			vm_map_lock(map);
-			if (last_timestamp + 1 != map->timestamp) {
-				rv = vm_map_lookup_clip_start(map, saved_start,
-				    &next_entry, &scratch_entry);
-				if (rv != KERN_SUCCESS)
-					break;
-			} else
-				next_entry = entry;
-			continue;
-		}
-
 		rv = vm_map_clip_end(map, entry, e1);
 		if (rv != KERN_SUCCESS)
 			break;
 		next_entry = vm_map_entry_succ(entry);
-
-		/* cow logic */
-		/* TODO: view wired memory processing in fork */
-		if (entry->wired_count != 0)
-			vm_map_entry_unwire(map, entry);
 
 		/* insert cowed new entry into map */
 		old_entry = entry;
@@ -5028,6 +5000,7 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			} else {
 				VM_OBJECT_WLOCK(object);
 				vm_object_clear_flag(object, OBJ_ONEMAPPING);
+                /* my note: transfer usage track from map_entry to object */
 				if (old_entry->cred != NULL) {
 					KASSERT(object->cred == NULL,
 						("vm_region_cow both cred"));
@@ -5060,6 +5033,7 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			vm_map_entry_set_vnode_text(new_entry, true);
 
 			/* insert entry into the new map */
+            /* TODO: insert error? we are not insering at the end of the new map */
 			vm_map_entry_link(map, new_entry);
 
             /* TODO: test vmspace_map_entry_copied (vmspace size, dsize, ...) */
@@ -5083,7 +5057,6 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			vm_map_entry_link(map, new_entry);
 			/* TODO: test vmspace_map_entry_copied (vmspace size, dsize, ...) */
             vmspace_map_entry_copied(vm, entry);
-			*mem_charged = 0;
             /* TODO: vm_map_copy_entry? */
 			vm_map_copy_entry(map, map, old_entry, new_entry, mem_charged);
 			vm_map_entry_set_vnode_text(new_entry, true);
