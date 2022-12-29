@@ -201,8 +201,8 @@ kern_tfork(struct thread *td, struct tfork_req *treq)
         /* TODO: error handling */
     }
 
-	printf("memory range:%p with %lu bytes\n", (void*)treq->s1, len);
-	printf("memory range:%p with %lu bytes\n", (void*)treq->s2, len);
+	// printf("memory range:%p with %lu bytes\n", (void*)treq->s1, len);
+	// printf("memory range:%p with %lu bytes\n", (void*)treq->s2, len);
 	return (error);
 }
 
