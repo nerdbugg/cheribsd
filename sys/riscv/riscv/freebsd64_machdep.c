@@ -227,6 +227,7 @@ freebsd64_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
 	struct thread *td;
 	struct proc *p;
 	vm_offset_t capregs, fp, sp;
+    void* __capability user_default_ddc;
 	int onstack;
 	int sig;
 
@@ -303,6 +304,10 @@ freebsd64_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
 
 	tf->tf_sepc = (uintcap_t)catcher;
 	tf->tf_sp = (register_t)fp;
+
+    user_default_ddc = cheri_getdefault();
+    user_default_ddc = cheri_setbounds(user_default_ddc, 0x4000000000);
+    tf->tf_ddc = (uintcap_t)user_default_ddc;
 
 	sysent = p->p_sysent;
 	if (sysent->sv_sigcode_base != 0)
