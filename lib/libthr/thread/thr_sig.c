@@ -46,6 +46,11 @@ __FBSDID("$FreeBSD$");
 #include "libc_private.h"
 #include "thr_private.h"
 
+#if __has_feature(capabilities)
+#include <cheri/cheric.h>
+#endif
+
+
 /* #define DEBUG_SIGNAL */
 #ifdef DEBUG_SIGNAL
 #define DBG_MSG		stdout_debug
@@ -217,6 +222,31 @@ thr_sighandler(int sig, siginfo_t *info, void *_ucp)
 	struct usigaction *usa;
 	int err;
 
+    // TODO: change register here according to $ddc
+    // TODO: get ddc from the uap context
+    mcontext_t *mc = &((ucontext_t*)_ucp)->uc_mcontext;
+
+    uint64_t caps;
+#if (defined(_KERNEL) && __has_feature(capabilities)) || \
+    defined(__CHERI_PURE_CAPABILITY__)
+    caps = (uint64_t)&(mc->mc_capregs);
+#else
+    caps = mc->mc_capregs;
+#endif
+
+    caps = caps + 0x200;
+    // change sp reg according to ddc base
+    // cp_ddc address offset relative to caps
+    // 32 * (128/8) = 0x200
+    __asm__ __volatile__ (
+            "lc ct1, (%0);"
+            "cgetbase t0, ct1;"
+            "add sp, sp, t0;"
+            : /* no output reg */
+            : "r"(caps)
+            : "ct1", "t0"
+    );
+
 	err = errno;
 	curthread = _get_curthread();
 	ucp = _ucp;
@@ -244,6 +274,15 @@ thr_sighandler(int sig, siginfo_t *info, void *_ucp)
 	}
 
 	handle_signal(&act, sig, info, ucp);
+
+    __asm__ __volatile__ (
+            "lc ct1, (%0);"
+            "cgetbase t0, ct1;"
+            "sub sp, sp, t0;"
+            : /* no output reg */
+            : "r"(caps)
+            : "ct1", "t0"
+    );
 }
 
 static void
