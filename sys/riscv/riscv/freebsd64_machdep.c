@@ -279,7 +279,12 @@ freebsd64_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
 	mtx_unlock(&psp->ps_mtx);
 	PROC_UNLOCK(td->td_proc);
 
-	/* Copy the capability registers out to the user's stack. */
+    /* Change the user ddc to default */
+    user_default_ddc = cheri_getdefault();
+    user_default_ddc = cheri_setbounds(user_default_ddc, 0x4000000000);
+    tf->tf_ddc = (uintcap_t)user_default_ddc;
+
+    /* Copy the capability registers out to the user's stack. */
 	if (copyoutcap(&mc.mc_capregs, __USER_CAP(capregs,
 	    sizeof(mc.mc_capregs)), sizeof(mc.mc_capregs)) != 0) {
 		PROC_LOCK(p);
@@ -304,10 +309,6 @@ freebsd64_sendsig(sig_t catcher, ksiginfo_t *ksi, sigset_t *mask)
 
 	tf->tf_sepc = (uintcap_t)catcher;
 	tf->tf_sp = (register_t)fp;
-
-    user_default_ddc = cheri_getdefault();
-    user_default_ddc = cheri_setbounds(user_default_ddc, 0x4000000000);
-    tf->tf_ddc = (uintcap_t)user_default_ddc;
 
 	sysent = p->p_sysent;
 	if (sysent->sv_sigcode_base != 0)
