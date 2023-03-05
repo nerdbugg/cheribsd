@@ -1,7 +1,7 @@
 set confirm off
 set architecture riscv:rv64
-symbol-file /home/chu/cheri/build/cheribsd-riscv64-build/home/chu/cheri/cheribsd/riscv.riscv64/sys/QEMU/kernel.full
+symbol-file /home/chu/cheri/output/rootfs-riscv64-hybrid/boot/kernel/kernel.full
 set disassemble-next-line auto
 set riscv use-compressed-breakpoints yes
-#target remote 127.0.0.1:26002
+target remote 127.0.0.1:26002
 
