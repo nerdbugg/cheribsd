@@ -170,17 +170,17 @@ sys_tfork(struct thread *td, struct tfork_args *uap)
 int
 kern_tfork(struct thread *td, struct tfork_req *treq)
 {
-    int error;
+	int error;
 	struct proc *p;
 	struct pcb *pcb;
 	struct vm_map *map;
-    struct vmspace *vm;
+	struct vmspace *vm;
 	vm_offset_t s1, s2, mem_charged;
 
-    error = 0;
+	error = 0;
 	p = td->td_proc;
 	pcb = td->td_pcb;
-    vm  = td->td_proc->p_vmspace;
+	vm = td->td_proc->p_vmspace;
 	map = &td->td_proc->p_vmspace->vm_map;
 
 	s1 = (vm_offset_t)treq->s1;
@@ -188,21 +188,21 @@ kern_tfork(struct thread *td, struct tfork_req *treq)
 	size_t len = treq->len;
 
 	error = vm_region_cow(vm, s1, s2, len, &mem_charged);
-    /* TODO: error handling */
-    if (!swap_reserve(mem_charged)) {
-        /*
-         * The swap reservation failed. The accounting
-         * from the entries of the copied vm2 will be
-         * subtracted in vmspace_free(), so force the
-         * reservation there.
-         */
-        swap_reserve_force(mem_charged);
-        error = ENOMEM;
-        /* TODO: error handling */
-    }
+	/* TODO: error handling */
+	if (!swap_reserve(mem_charged)) {
+		/*
+		 * The swap reservation failed. The accounting
+		 * from the entries of the copied vm2 will be
+		 * subtracted in vmspace_free(), so force the
+		 * reservation there.
+		 */
+		swap_reserve_force(mem_charged);
+		error = ENOMEM;
+		/* TODO: error handling */
+	}
 
-	printf("memory range:%p with %lu bytes\n", (void*)treq->s1, len);
-	printf("memory range:%p with %lu bytes\n", (void*)treq->s2, len);
+	printf("memory range:%p with %lu bytes\n", (void *)treq->s1, len);
+	printf("memory range:%p with %lu bytes\n", (void *)treq->s2, len);
 	return (error);
 }
 

@@ -4937,31 +4937,31 @@ vmspace_fork(struct vmspace *vm1, vm_ooffset_t *fork_charge)
 int
 vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm_ooffset_t *mem_charged)
 {
-    vm_map_t map;
+	vm_map_t map;
 	vm_map_entry_t old_entry, new_entry, entry, next_entry, scratch_entry;
 	vm_inherit_t inh;
 	vm_object_t object;
 
-    map = &(vm->vm_map);
+	map = &(vm->vm_map);
 	vm_offset_t e1 = s1 + len;
 	vm_offset_t e2 = s2 + len;
-    *mem_charged = 0;
+	*mem_charged = 0;
 	/* TODO: reference sys_munmap, round parameters */
 
 	/* Address range must be all in user VM space. */
 	if (!vm_map_range_valid(map, s2, e2))
 		return (EINVAL);
 
-    vm_map_lock(map);
-    if (map->busy) {
-        vm_map_wait_busy(map);
-    }
+	vm_map_lock(map);
+	if (map->busy) {
+		vm_map_wait_busy(map);
+	}
 
 	int rv;
 	rv = vm_map_lookup_clip_start(map, s1, &entry, &scratch_entry);
 	if (rv != KERN_SUCCESS)
 		return rv;
-	for(; entry->start < e1; entry = next_entry) {
+	for (; entry->start < e1; entry = next_entry) {
 		rv = vm_map_clip_end(map, entry, e1);
 		if (rv != KERN_SUCCESS)
 			break;
@@ -4970,8 +4970,9 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 		/* insert cowed new entry into map */
 		old_entry = entry;
 		inh = old_entry->inheritance;
-		if((old_entry->eflags & (MAP_ENTRY_GUARD & MAP_ENTRY_UNMAPPED))!=0 &&
-		   inh != VM_INHERIT_NONE)
+		if ((old_entry->eflags &
+			(MAP_ENTRY_GUARD & MAP_ENTRY_UNMAPPED)) != 0 &&
+		    inh != VM_INHERIT_NONE)
 			inh = VM_INHERIT_COPY;
 
 		switch (inh) {
@@ -4988,10 +4989,9 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			vm_object_reference(object);
 			if (old_entry->eflags & MAP_ENTRY_NEEDS_COPY) {
 				vm_object_shadow(&old_entry->object.vm_object,
-						 &old_entry->offset,
-						 old_entry->end-old_entry->start,
-						 old_entry->cred,
-						 true);
+				    &old_entry->offset,
+				    old_entry->end - old_entry->start,
+				    old_entry->cred, true);
 				old_entry->eflags &= ~MAP_ENTRY_NEEDS_COPY;
 				old_entry->cred = NULL;
 
@@ -5000,21 +5000,26 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			} else {
 				VM_OBJECT_WLOCK(object);
 				vm_object_clear_flag(object, OBJ_ONEMAPPING);
-                /* my note: transfer usage track from map_entry to object */
+				/* my note: transfer usage track from map_entry
+				 * to object */
 				if (old_entry->cred != NULL) {
 					KASSERT(object->cred == NULL,
-						("vm_region_cow both cred"));
+					    ("vm_region_cow both cred"));
 					object->cred = old_entry->cred;
-					object->charge = old_entry->end - old_entry->start;
+					object->charge = old_entry->end -
+					    old_entry->start;
 					old_entry->cred = NULL;
 				}
 				if (old_entry->eflags & MAP_ENTRY_WRITECNT &&
 				    object->type == OBJT_VNODE) {
-					KASSERT(((struct vnode *)object->
-					    handle)->v_writecount >0,
-						("vm_region_cow: v_writecount %p", object));
-					KASSERT(object->un_pager.vnp.writemappings > 0,
-						("vm_region_cow: vnp.writecount %p", object));
+					KASSERT(((struct vnode *)object->handle)
+						    ->v_writecount > 0,
+					    ("vm_region_cow: v_writecount %p",
+						object));
+					KASSERT(object->un_pager.vnp
+						    .writemappings > 0,
+					    ("vm_region_cow: vnp.writecount %p",
+						object));
 				}
 				VM_OBJECT_WUNLOCK(object);
 			}
@@ -5023,21 +5028,24 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			/* change new entry point to new address range */
 			new_entry->start = old_entry->start - s1 + s2;
 			new_entry->end = old_entry->end - s1 + s2;
-			new_entry->eflags &= ~(MAP_ENTRY_USER_WIRED | MAP_ENTRY_IN_TRANSITION);
+			new_entry->eflags &= ~(
+			    MAP_ENTRY_USER_WIRED | MAP_ENTRY_IN_TRANSITION);
 			new_entry->wiring_thread = NULL;
 			new_entry->wired_count = 0;
 			if (new_entry->eflags & MAP_ENTRY_WRITECNT) {
 				vm_pager_update_writecount(object,
-							   new_entry->start, new_entry->end);
+				    new_entry->start, new_entry->end);
 			}
 			vm_map_entry_set_vnode_text(new_entry, true);
 
 			/* insert entry into the new map */
-            /* TODO: insert error? we are not insering at the end of the new map */
+			/* TODO: insert error? we are not insering at the end of
+			 * the new map */
 			vm_map_entry_link(map, new_entry);
 
-            /* TODO: test vmspace_map_entry_copied (vmspace size, dsize, ...) */
-            vmspace_map_entry_copied(vm, entry);
+			/* TODO: test vmspace_map_entry_copied (vmspace size,
+			 * dsize, ...) */
+			vmspace_map_entry_copied(vm, entry);
 			/* update physical map */
 			/* need do nothing? */
 			break;
@@ -5049,16 +5057,18 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			new_entry->end = old_entry->end - s1 + s2;
 			/* set new entry to CoW over the old object */
 			new_entry->eflags &= ~(MAP_ENTRY_USER_WIRED |
-					       MAP_ENTRY_IN_TRANSITION | MAP_ENTRY_WRITECNT);
+			    MAP_ENTRY_IN_TRANSITION | MAP_ENTRY_WRITECNT);
 			new_entry->wiring_thread = NULL;
 			new_entry->wired_count = 0;
 			new_entry->object.vm_object = NULL;
 			new_entry->cred = NULL;
 			vm_map_entry_link(map, new_entry);
-			/* TODO: test vmspace_map_entry_copied (vmspace size, dsize, ...) */
-            vmspace_map_entry_copied(vm, entry);
-            /* TODO: vm_map_copy_entry? */
-			vm_map_copy_entry(map, map, old_entry, new_entry, mem_charged);
+			/* TODO: test vmspace_map_entry_copied (vmspace size,
+			 * dsize, ...) */
+			vmspace_map_entry_copied(vm, entry);
+			/* TODO: vm_map_copy_entry? */
+			vm_map_copy_entry(map, map, old_entry, new_entry,
+			    mem_charged);
 			vm_map_entry_set_vnode_text(new_entry, true);
 			break;
 
@@ -5067,9 +5077,9 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			memset(new_entry, 0, sizeof(*new_entry));
 
 			new_entry->start = old_entry->start - s1 + s2;
-			new_entry->end = old_entry->end - s1 +s2;
+			new_entry->end = old_entry->end - s1 + s2;
 			new_entry->eflags = old_entry->eflags &
-				~(MAP_ENTRY_USER_WIRED | MAP_ENTRY_IN_TRANSITION |
+			    ~(MAP_ENTRY_USER_WIRED | MAP_ENTRY_IN_TRANSITION |
 				MAP_ENTRY_WRITECNT | MAP_ENTRY_VN_EXEC |
 				MAP_ENTRY_SPLIT_BOUNDARY_MASK);
 			new_entry->protection = old_entry->protection;
@@ -5077,12 +5087,13 @@ vm_region_cow(struct vmspace *vm, vm_offset_t s1, vm_offset_t s2, size_t len, vm
 			new_entry->inheritance = VM_INHERIT_ZERO;
 
 			vm_map_entry_link(map, new_entry);
-            /* TODO: test vmspace_map_entry_copied (vmspace size, dsize, ...) */
-            vmspace_map_entry_copied(vm, entry);
+			/* TODO: test vmspace_map_entry_copied (vmspace size,
+			 * dsize, ...) */
+			vmspace_map_entry_copied(vm, entry);
 
 			new_entry->cred = curthread->td_ucred;
 			crhold(new_entry->cred);
-            *mem_charged += (new_entry->end - new_entry->start);
+			*mem_charged += (new_entry->end - new_entry->start);
 			break;
 		}
 	}
