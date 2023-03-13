@@ -129,7 +129,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		e_end = entry->end;
 		privateresident = 0;
 		resident = 0;
-        inherit = entry->inheritance;
+		inherit = entry->inheritance;
 		obj = entry->object.vm_object;
 		if (obj != NULL) {
 			VM_OBJECT_RLOCK(obj);
@@ -186,7 +186,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 			if (lobj != obj)
 				VM_OBJECT_RUNLOCK(lobj);
 
-            ocred = obj->cred;
+			ocred = obj->cred;
 			flags = obj->flags;
 			ref_count = obj->ref_count;
 			shadow_count = obj->shadow_count;
@@ -198,7 +198,7 @@ procfs_doprocmap(PFS_FILL_ARGS)
 		} else {
 			type = "none";
 			flags = 0;
-            ocred = NULL;
+			ocred = NULL;
 			ref_count = 0;
 			shadow_count = 0;
 		}
@@ -225,8 +225,8 @@ procfs_doprocmap(PFS_FILL_ARGS)
 			(e_eflags & MAP_ENTRY_NEEDS_COPY)?"NC":"NNC",
 			type, fullpath,
 			cred ? "CH":"NCH", cred ? cred->cr_ruid : -1,
-            ocred ? "OCH":"NOCH", ocred ? ocred->cr_uid : -1
-            );
+            		ocred ? "OCH":"NOCH", ocred ? ocred->cr_uid : -1
+            	);
 
 		if (freepath != NULL)
 			free(freepath, M_TEMP);
